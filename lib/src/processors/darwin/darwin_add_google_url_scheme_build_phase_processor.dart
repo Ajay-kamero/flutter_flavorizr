@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2024 Angelo Cassano
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+import 'package:dart_xcodeproj/dart_xcodeproj.dart';
+import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
+import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
+import 'package:mason_logger/mason_logger.dart';
+
+/// Adds an idempotent "Google Sign-In URL Scheme" shell build phase to the
+/// Runner target so each flavor gets its Google Sign-In URL scheme at build
+/// time from the active `GoogleService-Info.plist` (copied by Firebase Setup).
+class DarwinAddGoogleUrlSchemeBuildPhaseProcessor
+    extends AbstractProcessor<void> {
+  static const String phaseName = 'Google Sign-In URL Scheme';
+
+  final String projectPath;
+
+  const DarwinAddGoogleUrlSchemeBuildPhaseProcessor(
+    this.projectPath, {
+    required Flavorizr config,
+    required Logger logger,
+  }) : super(config, logger: logger);
+
+  @override
+  Future<void> execute() async {
+    if (!config.iosFirebaseFlavorsAvailable) {
+      logger.detail(
+        '[$DarwinAddGoogleUrlSchemeBuildPhaseProcessor] Skipping: no iOS Firebase flavors',
+      );
+      return;
+    }
+
+    logger.detail(
+      '[$DarwinAddGoogleUrlSchemeBuildPhaseProcessor] Adding $phaseName build phase',
+    );
+
+    final project = await XcodeProject.open(projectPath);
+    final target = project.targets.first as PBXNativeTarget;
+
+    final existing = target.buildPhases
+        .whereType<PBXShellScriptBuildPhase>()
+        .where((phase) => phase.name == phaseName)
+        .toList();
+    for (final phase in existing) {
+      target.buildPhases.remove(phase);
+    }
+
+    final phase = project.newObject<PBXShellScriptBuildPhase>(
+      (g, u) => PBXShellScriptBuildPhase(g, u),
+    );
+    phase.name = phaseName;
+    phase.shellPath = '/bin/sh';
+    phase.shellScript = _shellScript;
+    phase.runOnlyForDeploymentPostprocessing = '0';
+    // Append last so Info.plist processing and Firebase Setup run first.
+    target.buildPhases.add(phase);
+
+    await project.save();
+
+    logger.detail(
+      '[$DarwinAddGoogleUrlSchemeBuildPhaseProcessor] $phaseName build phase added',
+      style: logger.theme.success,
+    );
+  }
+
+  /// Injects the active flavor's `REVERSED_CLIENT_ID` (URL scheme) and
+  /// `CLIENT_ID` (`GIDClientID`) into the built app's Info.plist.
+  static const String _shellScript = r'''
+# Injects the active flavor's Google Sign-In URL scheme (REVERSED_CLIENT_ID)
+# and GIDClientID (CLIENT_ID) into the built app's Info.plist.
+# Values are read from the GoogleService-Info.plist copied by "Firebase Setup".
+GSP="${SRCROOT}/Runner/GoogleService-Info.plist"
+TARGET_PLIST="${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}"
+
+if [ ! -f "$GSP" ] || [ ! -f "$TARGET_PLIST" ]; then
+  echo "warning: Google URL scheme injection skipped (missing plist)"
+  exit 0
+fi
+
+REVERSED_CLIENT_ID=$(/usr/libexec/PlistBuddy -c "Print :REVERSED_CLIENT_ID" "$GSP" 2>/dev/null)
+CLIENT_ID=$(/usr/libexec/PlistBuddy -c "Print :CLIENT_ID" "$GSP" 2>/dev/null)
+
+if [ -n "$REVERSED_CLIENT_ID" ]; then
+  /usr/libexec/PlistBuddy -c "Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 $REVERSED_CLIENT_ID" "$TARGET_PLIST" 2>/dev/null || {
+    /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$TARGET_PLIST" 2>/dev/null
+    /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$TARGET_PLIST" 2>/dev/null
+    /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleTypeRole string Editor" "$TARGET_PLIST" 2>/dev/null
+    /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$TARGET_PLIST" 2>/dev/null
+    /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string $REVERSED_CLIENT_ID" "$TARGET_PLIST"
+  }
+fi
+
+if [ -n "$CLIENT_ID" ]; then
+  /usr/libexec/PlistBuddy -c "Set :GIDClientID $CLIENT_ID" "$TARGET_PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Add :GIDClientID string $CLIENT_ID" "$TARGET_PLIST"
+fi
+''';
+
+  @override
+  String toString() => 'DarwinAddGoogleUrlSchemeBuildPhaseProcessor';
+}

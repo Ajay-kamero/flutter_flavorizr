@@ -23,6 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import 'dart:io';
+
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_dummy_assets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/android/android_manifest_processor.dart';
@@ -43,6 +45,7 @@ import 'package:flutter_flavorizr/src/processors/commons/existing_file_string_pr
 import 'package:flutter_flavorizr/src/processors/commons/new_file_string_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/queue_processor.dart';
 import 'package:flutter_flavorizr/src/processors/commons/unzip_file_processor.dart';
+import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_google_url_scheme_build_phase_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_schemas_processor.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/podfile_processor.dart';
 import 'package:flutter_flavorizr/src/processors/flutter/flutter_flavors_processor.dart';
@@ -92,7 +95,8 @@ class Processor extends AbstractProcessor<void> {
     'flutter:flavors',
     'flutter:app',
     'flutter:pages',
-    'flutter:main',
+    // Skip: overwrites existing main.dart on every flavorizr run
+    // 'flutter:main',
 
     // iOS
     'ios:podfile',
@@ -128,6 +132,9 @@ class Processor extends AbstractProcessor<void> {
 
     // Google
     'google:firebase',
+
+    // iOS Google Sign-In URL scheme (per-flavor, injected at build time)
+    'ios:googleUrlScheme',
 
     // Huawei
     'huawei:agconnect',
@@ -203,8 +210,47 @@ class Processor extends AbstractProcessor<void> {
       }
 
       logger.success('Flavorization process finished');
+
+      // Default instruction set only: generate per-flavor native splash screens
+      // via flutter_native_splash using yamls/flutter_native_splash-<flavor>.yaml
+      if (config.instructions == null) {
+        await _runFlutterNativeSplashForFlavors();
+      }
     } else {
       logger.info('Flavorization process cancelled');
+    }
+  }
+
+  Future<void> _runFlutterNativeSplashForFlavors() async {
+    final flavors = <String>{
+      ...config.androidFlavors.keys,
+      ...config.iosFlavors.keys,
+      ...config.macosFlavors.keys,
+    }.toList();
+
+    for (final flavor in flavors) {
+      logger.info('Running flutter_native_splash:create for flavor: $flavor');
+      final process = await Process.run(
+        'dart',
+        [
+          'run',
+          'flutter_native_splash:create',
+          '--flavor',
+          flavor,
+          '--path=yamls/flutter_native_splash-$flavor.yaml',
+        ],
+        workingDirectory: Directory.current.path,
+      );
+
+      if (process.exitCode != 0) {
+        logger.err('Error running command for flavor: $flavor');
+        logger.err('stdout: ${process.stdout}');
+        logger.err('stderr: ${process.stderr}');
+        continue;
+      }
+
+      logger.info('Command completed successfully for flavor: $flavor');
+      logger.info('');
     }
   }
 
@@ -458,6 +504,13 @@ class Processor extends AbstractProcessor<void> {
         macosRunnerProject: K.macOSRunnerProjectPath,
         iosGeneratedFirebaseScriptPath: K.iOSFirebaseScriptPath,
         macosGeneratedFirebaseScriptPath: K.macOSFirebaseScriptPath,
+        config: flavorizr,
+        logger: logger,
+      ),
+
+      // iOS Google Sign-In URL scheme
+      'ios:googleUrlScheme': () => DarwinAddGoogleUrlSchemeBuildPhaseProcessor(
+        K.iOSRunnerProjectPath,
         config: flavorizr,
         logger: logger,
       ),
