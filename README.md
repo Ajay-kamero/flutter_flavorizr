@@ -2,14 +2,14 @@
 
 A flutter utility to easily create flavors in your flutter application
 
-[![Pub](https://img.shields.io/pub/v/flutter_flavorizr.svg)](https://pub.dev/packages/flutter_flavorizr)
-[![Pipeline](https://github.com/AngeloAvv/flutter_flavorizr/actions/workflows/default.yml/badge.svg)](https://github.com/AngeloAvv/flutter_flavorizr/actions/workflows/default.yml)
-[![codecov](https://codecov.io/gh/AngeloAvv/flutter_flavorizr/graph/badge.svg?token=D8V72QVK72)](https://codecov.io/gh/AngeloAvv/flutter_flavorizr)
-[![Star on GitHub](https://img.shields.io/github/stars/AngeloAvv/flutter_flavorizr.svg?style=flat&logo=github&colorB=deeppink&label=stars)](https://github.com/AngeloAvv/flutter_flavorizr)
-[![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](https://opensource.org/licenses/MIT)
-[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/AngeloAvv)
+> **Fork note:** this repository (`Ajay-kamero/flutter_flavorizr`) is based on upstream [`flutter_flavorizr` 2.6.0](https://github.com/AngeloAvv/flutter_flavorizr) and adds:
+> - per-flavor **Google Sign-In URL schemes** on iOS (`ios:googleUrlScheme`)
+> - automatic **flutter_native_splash** generation per flavor
+> - **skips overwriting** an existing `main.dart` by default
 
-If you want to support this project, please leave a star, share this project, or consider donating through [Github Sponsor](https://github.com/sponsors/AngeloAvv).
+[![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+
+If you want to support the original project, please leave a star on [AngeloAvv/flutter_flavorizr](https://github.com/AngeloAvv/flutter_flavorizr) or consider donating through [Github Sponsor](https://github.com/sponsors/AngeloAvv).
 
 ## Getting Started
 
@@ -22,17 +22,30 @@ Since some processors reference some existing files and a specific base structur
 
 ### Installation
 
-This package is intended to support development of Flutter projects. In general, put it under [dev_dependencies](https://dart.dev/tools/pub/dependencies#dev-dependencies), in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec):
+This package is intended to support development of Flutter projects. In general, put it under [dev_dependencies](https://dart.dev/tools/pub/dependencies#dev-dependencies), in your [pubspec.yaml](https://dart.dev/tools/pub/pubspec).
+
+Use this fork via Git:
 
 ```yaml
 dev_dependencies:
-  flutter_flavorizr: ^2.6.0
+  flutter_flavorizr:
+    git:
+      url: https://github.com/Ajay-kamero/flutter_flavorizr.git
+      ref: main
+```
+
+Or pin a local path while developing:
+
+```yaml
+dev_dependencies:
+  flutter_flavorizr:
+    path: ../flutter_flavorizr
 ```
 
 You can install packages from the command line:
 
 ```terminal
-pub get
+flutter pub get
 ```
 
 ## Create your flavors
@@ -135,8 +148,9 @@ flavorizr:
 | flutter:flavors         | Flutter       | Creates the flutter flavor configuration file                           |
 | flutter:app             | Flutter       | Creates the app.dart entry                                              |
 | flutter:pages           | Flutter       | Creates a set of default pages for the app                              |
-| flutter:main            | Flutter       | Creates the main target to run the app                                  |
+| flutter:main            | Flutter       | Creates/overwrites `lib/main.dart` (disabled in the default set of this fork) |
 | google:firebase         | Google        | Adds Google Firebase configurations for Android and iOS for each flavor |
+| ios:googleUrlScheme     | Google / iOS  | Adds a build phase that injects per-flavor Google Sign-In URL scheme + `GIDClientID` into the built Info.plist |
 | huawei:agconnect        | Huawei        | Adds Huawei AGConnect configurations for Android for each flavor        |
 | ide:config              | IDE           | Generates debugging configurations for each flavor of your IDE          |
 | ios:podfile             | iOS           | Updates the Pods-Runner path for each flavor                            |
@@ -520,7 +534,6 @@ By default, when you do not specify a custom set of processors by appending the 
 * flutter:flavors
 * flutter:app
 * flutter:pages
-* flutter:main
 * ios:podfile
 * ios:xcconfig
 * ios:buildTargets
@@ -546,9 +559,12 @@ By default, when you do not specify a custom set of processors by appending the 
 * windows:dummyAssets
 * windows:icons
 * google:firebase
+* ios:googleUrlScheme
 * huawei:agconnect
 * assets:clean
 * ide:config
+
+> **Fork defaults:** `flutter:main` is **not** included (avoids overwriting your existing `main.dart`). After a successful run with the default instruction set (no custom `instructions:`), this fork also runs `flutter_native_splash:create` for each flavor.
 
 ## Customize your app
 
@@ -630,6 +646,46 @@ Future<void> main() async {
 }
 ```
 
+### Google Sign-In URL schemes (iOS)
+
+When you use Google Sign-In (or Firebase Auth with Google) across multiple iOS flavors, each flavor has its own `REVERSED_CLIENT_ID` / `CLIENT_ID` inside `GoogleService-Info.plist`. A single static `Info.plist` cannot hold every flavor’s values.
+
+This fork adds the `ios:googleUrlScheme` instruction (enabled by default after `google:firebase`). It installs an Xcode shell build phase named **Google Sign-In URL Scheme** that, at build time:
+
+1. Reads `Runner/GoogleService-Info.plist` (already copied for the active flavor by the **Firebase Setup** phase)
+2. Writes `REVERSED_CLIENT_ID` into `CFBundleURLTypes` / `CFBundleURLSchemes`
+3. Writes `CLIENT_ID` into `GIDClientID`
+
+**Requirements**
+
+- Define `ios.firebase.config` for each flavor (same as Firebase setup above)
+- Keep `google:firebase` **before** `ios:googleUrlScheme` in your instruction list
+- If you override `instructions:`, include both explicitly:
+
+```yaml
+instructions:
+  - google:firebase
+  - ios:googleUrlScheme
+  # ...other instructions
+```
+
+No manual Info.plist URL-scheme edits are needed per flavor.
+
+### Native splash screens (`flutter_native_splash`)
+
+When you run flavorizr with the **default** instruction set (`instructions` omitted from `flavorizr.yaml`), this fork automatically runs per-flavor native splash generation after flavorization:
+
+```terminal
+dart run flutter_native_splash:create --flavor <flavor> --path=yamls/flutter_native_splash-<flavor>.yaml
+```
+
+**Requirements**
+
+- Add [`flutter_native_splash`](https://pub.dev/packages/flutter_native_splash) as a dev dependency in the **consuming app**
+- Provide a YAML file per flavor under `yamls/`, e.g. `yamls/flutter_native_splash-apple.yaml`, `yamls/flutter_native_splash-banana.yaml`
+
+If you set a custom `instructions:` list, splash generation is **skipped** (call `flutter_native_splash` yourself, or remove the custom list to use defaults).
+
 ### Huawei AppGallery Connect
 
 In order to flavorize your project and enable AppGallery Connect in your flavor you have to define an agconnect object below each Android flavor. Under the agconnect object you must define the config path of the agconnect-services.json.
@@ -678,9 +734,9 @@ How to fix the error ["Unable to load contents of file list"](doc%2Ftroubleshoot
 
 ## Questions and bugs
 
-Please feel free to submit new issues if you encounter problems while using this library.
+Please feel free to submit new issues if you encounter problems while using this fork: [Ajay-kamero/flutter_flavorizr](https://github.com/Ajay-kamero/flutter_flavorizr/issues).
 
-If you need help with the use of the library or you just want to request new features, please use the [Discussions](https://github.com/AngeloAvv/flutter_flavorizr/discussions) section of the repository. Issues opened as questions will be automatically closed.
+For upstream/library questions, see the original [Discussions](https://github.com/AngeloAvv/flutter_flavorizr/discussions) section.
 
 ## License
 

@@ -1,3 +1,9 @@
+## 2.6.1
+
+* **Fork (Ajay-kamero):** Added `ios:googleUrlScheme` — installs an Xcode build phase that injects per-flavor Google Sign-In `REVERSED_CLIENT_ID` / `GIDClientID` from `GoogleService-Info.plist` into the built Info.plist
+* **Fork:** After a successful default flavorize run, runs `flutter_native_splash:create` for each flavor using `yamls/flutter_native_splash-<flavor>.yaml`
+* **Fork:** Disabled `flutter:main` in the default instruction set so existing `main.dart` is not overwritten
+
 ## 2.6.0
 
 * Added support for Linux platform (`linux:cmake`, `linux:runnerCmake`, `linux:myApplication` processors)
