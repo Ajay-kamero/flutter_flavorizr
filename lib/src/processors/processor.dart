@@ -56,6 +56,7 @@ import 'package:flutter_flavorizr/src/processors/ios/build_configuration/ios_bui
 import 'package:flutter_flavorizr/src/processors/ios/dummy_assets/ios_dummy_assets_targets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/icons/ios_icons_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/ios_plist_processor.dart';
+import 'package:flutter_flavorizr/src/processors/ios/launch_screen/ios_sync_native_splash_assets_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/launch_screen/ios_targets_launchscreen_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/ios/xcconfig/ios_xcconfig_targets_file_processor.dart';
 import 'package:flutter_flavorizr/src/processors/linux/linux_cmake_lists_processor.dart';
@@ -211,11 +212,10 @@ class Processor extends AbstractProcessor<void> {
 
       logger.success('Flavorization process finished');
 
-      // Default instruction set only: generate per-flavor native splash screens
-      // via flutter_native_splash using yamls/flutter_native_splash-<flavor>.yaml
-      if (config.instructions == null) {
-        await _runFlutterNativeSplashForFlavors();
-      }
+      // Generate per-flavor native splash when yamls exist, then sync iOS
+      // FNS assets into flavorizr's {flavor}LaunchImage (Info.plist target).
+      await _runFlutterNativeSplashForFlavors();
+      _syncExistingIosNativeSplashAssets();
     } else {
       logger.info('Flavorization process cancelled');
     }
@@ -229,6 +229,11 @@ class Processor extends AbstractProcessor<void> {
     }.toList();
 
     for (final flavor in flavors) {
+      final yamlPath = 'yamls/flutter_native_splash-$flavor.yaml';
+      if (!File(yamlPath).existsSync()) {
+        continue;
+      }
+
       logger.info('Running flutter_native_splash:create for flavor: $flavor');
       final process = await Process.run(
         'dart',
@@ -237,7 +242,7 @@ class Processor extends AbstractProcessor<void> {
           'flutter_native_splash:create',
           '--flavor',
           flavor,
-          '--path=yamls/flutter_native_splash-$flavor.yaml',
+          '--path=$yamlPath',
         ],
         workingDirectory: Directory.current.path,
       );
@@ -251,6 +256,17 @@ class Processor extends AbstractProcessor<void> {
 
       logger.info('Command completed successfully for flavor: $flavor');
       logger.info('');
+    }
+  }
+
+  void _syncExistingIosNativeSplashAssets() {
+    for (final flavor in config.iosFlavors.keys) {
+      IOSSyncNativeSplashAssetsProcessor(
+        flavor,
+        splashYamlPath: 'yamls/flutter_native_splash-$flavor.yaml',
+        config: config,
+        logger: logger,
+      ).execute();
     }
   }
 

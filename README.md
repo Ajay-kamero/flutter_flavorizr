@@ -673,18 +673,18 @@ No manual Info.plist URL-scheme edits are needed per flavor.
 
 ### Native splash screens (`flutter_native_splash`)
 
-When you run flavorizr with the **default** instruction set (`instructions` omitted from `flavorizr.yaml`), this fork automatically runs per-flavor native splash generation after flavorization:
+When `yamls/flutter_native_splash-<flavor>.yaml` exists for a flavor, this fork runs:
 
 ```terminal
 dart run flutter_native_splash:create --flavor <flavor> --path=yamls/flutter_native_splash-<flavor>.yaml
 ```
 
+**iOS naming sync (important):** `flutter_native_splash` writes `LaunchImage{Flavor}` / `LaunchScreen{Flavor}`, but flavorizr's Info.plist uses `{flavor}LaunchScreen` → `{flavor}LaunchImage`. After splash create, this fork **copies** the FNS imageset into `{flavor}LaunchImage.imageset` and applies yaml `color` / `color_ios` to `{flavor}LaunchScreen.storyboard`, so the logo is what cold-start actually shows (not the black 1×1 dummy).
+
 **Requirements**
 
 - Add [`flutter_native_splash`](https://pub.dev/packages/flutter_native_splash) as a dev dependency in the **consuming app**
-- Provide a YAML file per flavor under `yamls/`, e.g. `yamls/flutter_native_splash-apple.yaml`, `yamls/flutter_native_splash-banana.yaml`
-
-If you set a custom `instructions:` list, splash generation is **skipped** (call `flutter_native_splash` yourself, or remove the custom list to use defaults).
+- Provide a YAML file per flavor under `yamls/`, e.g. `yamls/flutter_native_splash-apple.yaml`
 
 ### Huawei AppGallery Connect
 

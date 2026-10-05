@@ -1,3 +1,8 @@
+## 2.6.2
+
+* **Fork:** Fixed black iOS launch screen after `flutter_native_splash` — sync FNS `LaunchImage{Flavor}` into flavorizr `{flavor}LaunchImage` and apply splash `color` to `{flavor}LaunchScreen.storyboard` (Info.plist already points at those names)
+* **Fork:** Run splash create whenever `yamls/flutter_native_splash-<flavor>.yaml` exists (not only when `instructions` is omitted)
+
 ## 2.6.1
 
 * **Fork (Ajay-kamero):** Added `ios:googleUrlScheme` — installs an Xcode build phase that injects per-flavor Google Sign-In `REVERSED_CLIENT_ID` / `GIDClientID` from `GoogleService-Info.plist` into the built Info.plist
