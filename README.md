@@ -2,13 +2,18 @@
 
 A flutter utility to easily create flavors in your flutter application
 
-> **Fork note:** this repository (`Ajay-kamero/flutter_flavorizr`) is based on upstream [`flutter_flavorizr` 2.6.0](https://github.com/AngeloAvv/flutter_flavorizr) and adds:
+> **Fork note:** this repository (`Ajay-kamero/flutter_flavorizr`) is based on upstream `flutter_flavorizr` [2.6.0](https://github.com/AngeloAvv/flutter_flavorizr).
+>
+> **Customizations (keep when rebasing upstream):** see [Kamero fork: features & re-apply after upstream merge](#kamero-fork-features--re-apply-after-upstream-merge).
+>
+> Quick list:
+>
 > - per-flavor **Google Sign-In URL schemes** on iOS (`ios:googleUrlScheme`)
-> - automatic **flutter_native_splash** generation per flavor
+> - automatic **flutter_native_splash** generation + iOS asset name sync
 > - **skips overwriting** an existing `main.dart` by default
-> - iOS flavor **build settings defaults** that survive reruns (see [iOS build settings defaults](#ios-build-settings-defaults-fork))
+> - iOS **build settings defaults** that survive reruns (deployment target, CLANG, platforms, device family)
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)
 
 If you want to support the original project, please leave a star on [AngeloAvv/flutter_flavorizr](https://github.com/AngeloAvv/flutter_flavorizr) or consider donating through [Github Sponsor](https://github.com/sponsors/AngeloAvv).
 
@@ -48,6 +53,8 @@ You can install packages from the command line:
 ```terminal
 flutter pub get
 ```
+
+
 
 ## Create your flavors
 
@@ -122,122 +129,146 @@ flavorizr:
       windows: {}
 ```
 
+
+
 ### Available fields
+
+
 
 #### flavorizr
 
+
 | key                                     | type   | default                                                                                    | required | description                                                                                   |
-|:----------------------------------------|:-------|:-------------------------------------------------------------------------------------------|:---------|:----------------------------------------------------------------------------------------------|
+| --------------------------------------- | ------ | ------------------------------------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------- |
 | app                                     | Object |                                                                                            | false    | An object describing the general capabilities of an app                                       |
 | flavors                                 | Array  |                                                                                            | true     | An array of items. Each of them describes a flavor configuration                              |
 | [instructions](#available-instructions) | Array  |                                                                                            | false    | An array of instructions to customize the flavorizr process                                   |
 | assetsUrl                               | String | [link](https://github.com/AngeloAvv/flutter_flavorizr/releases/download/v2.6.0/assets.zip) | false    | A string containing the URL of the zip assets file. The default points to the current release |
 | ide                                     | Array  |                                                                                            | false    | The IDE in which the app is being developed. Currently only `vscode` or `idea`                |
 
-##### <a href="#available-instructions">Available instructions</a>
 
-| value                   | category      | description                                                             |
-|:------------------------|:--------------|:------------------------------------------------------------------------|
-| assets:download         | Miscellaneous | Downloads the assets zip from the network                               |
-| assets:extract          | Miscellaneous | Extracts the downloaded zip in the project .tmp directory               |
-| assets:clean            | Miscellaneous | Removes the assets from the project directory                           |
-| android:flavorizrGradle | Android       | Adds the flavors to the Android flavorizr.gradle file                   |
-| android:buildGradle     | Android       | Imports the Android flavorizr.gradle file into build.gradle file        |
-| android:androidManifest | Android       | Changes the reference of the app name in the AndroidManifest.xml        |
-| android:dummyAssets     | Android       | Generates some default icons for your custom flavors                    |
-| android:icons           | Android       | Creates a set of icons for each flavor according to the icon directive  |
-| flutter:flavors         | Flutter       | Creates the flutter flavor configuration file                           |
-| flutter:app             | Flutter       | Creates the app.dart entry                                              |
-| flutter:pages           | Flutter       | Creates a set of default pages for the app                              |
-| flutter:main            | Flutter       | Creates/overwrites `lib/main.dart` (disabled in the default set of this fork) |
-| google:firebase         | Google        | Adds Google Firebase configurations for Android and iOS for each flavor |
-| ios:googleUrlScheme     | Google / iOS  | Adds a build phase that injects per-flavor Google Sign-In URL scheme + `GIDClientID` into the built Info.plist |
-| huawei:agconnect        | Huawei        | Adds Huawei AGConnect configurations for Android for each flavor        |
-| ide:config              | IDE           | Generates debugging configurations for each flavor of your IDE          |
-| ios:podfile             | iOS           | Updates the Pods-Runner path for each flavor                            |
-| ios:xcconfig            | iOS           | Creates a set of xcconfig files for each flavor and build configuration |
-| ios:buildTargets        | iOS           | Creates a set of build targets for each flavor and build configuration  |
-| ios:schema              | iOS           | Creates a set of schemas for each flavor                                |
-| ios:dummyAssets         | iOS           | Generates some default icons for your custom flavors                    |
-| ios:icons               | iOS           | Creates a set of icons for each flavor according to the icon directive  |
-| ios:plist               | iOS           | Updates the info.plist file                                             |
-| ios:launchScreen        | iOS           | Creates a set of launchscreens for each flavor                          |
-| macos:podfile           | macOS         | Updates the Pods-Runner path for each flavor                            |
-| macos:xcconfig          | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
-| macos:configs           | macOS         | Creates a set of xcconfig files for each flavor and build configuration |
-| macos:buildTargets      | macOS         | Creates a set of build targets for each flavor and build configuration  |
-| macos:schema            | macOS         | Creates a set of schemas for each flavor                                |
-| macos:dummyAssets       | macOS         | Generates some default icons for your custom flavors                    |
-| macos:icons             | macOS         | Creates a set of icons for each flavor according to the icon directive  |
-| macos:plist             | macOS         | Updates the info.plist file                                             |
-| linux:cmake             | Linux         | Sets the application ID for each flavor in CMakeLists.txt               |
-| linux:runnerCmake       | Linux         | Forwards FLUTTER_APP_FLAVOR into runner/CMakeLists.txt so it's available to native code |
-| linux:myApplication     | Linux         | Sets the window title for each flavor in my_application.cc              |
-| windows:mainCppTemplate | Windows       | Templates main.cpp into main.cpp.in so its window title can be set per flavor |
-| windows:runnerRcTemplate| Windows       | Templates Runner.rc into Runner.rc.in so its icon/window title can be set per flavor |
-| windows:cmake           | Windows       | Sets the icon/window title for each flavor in runner/CMakeLists.txt and wires the .in templates via configure_file |
-| windows:dummyAssets     | Windows       | Generates a default icon for your custom flavors                        |
-| windows:icons           | Windows       | Creates an icon for each flavor according to the icon directive          |
+
+
+##### [Available instructions](#available-instructions)
+
+
+| value                    | category      | description                                                                                                        |
+| ------------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| assets:download          | Miscellaneous | Downloads the assets zip from the network                                                                          |
+| assets:extract           | Miscellaneous | Extracts the downloaded zip in the project .tmp directory                                                          |
+| assets:clean             | Miscellaneous | Removes the assets from the project directory                                                                      |
+| android:flavorizrGradle  | Android       | Adds the flavors to the Android flavorizr.gradle file                                                              |
+| android:buildGradle      | Android       | Imports the Android flavorizr.gradle file into build.gradle file                                                   |
+| android:androidManifest  | Android       | Changes the reference of the app name in the AndroidManifest.xml                                                   |
+| android:dummyAssets      | Android       | Generates some default icons for your custom flavors                                                               |
+| android:icons            | Android       | Creates a set of icons for each flavor according to the icon directive                                             |
+| flutter:flavors          | Flutter       | Creates the flutter flavor configuration file                                                                      |
+| flutter:app              | Flutter       | Creates the app.dart entry                                                                                         |
+| flutter:pages            | Flutter       | Creates a set of default pages for the app                                                                         |
+| flutter:main             | Flutter       | Creates/overwrites `lib/main.dart` (disabled in the default set of this fork)                                      |
+| google:firebase          | Google        | Adds Google Firebase configurations for Android and iOS for each flavor                                            |
+| ios:googleUrlScheme      | Google / iOS  | Adds a build phase that injects per-flavor Google Sign-In URL scheme + `GIDClientID` into the built Info.plist     |
+| huawei:agconnect         | Huawei        | Adds Huawei AGConnect configurations for Android for each flavor                                                   |
+| ide:config               | IDE           | Generates debugging configurations for each flavor of your IDE                                                     |
+| ios:podfile              | iOS           | Updates the Pods-Runner path for each flavor                                                                       |
+| ios:xcconfig             | iOS           | Creates a set of xcconfig files for each flavor and build configuration                                            |
+| ios:buildTargets         | iOS           | Creates a set of build targets for each flavor and build configuration                                             |
+| ios:schema               | iOS           | Creates a set of schemas for each flavor                                                                           |
+| ios:dummyAssets          | iOS           | Generates some default icons for your custom flavors                                                               |
+| ios:icons                | iOS           | Creates a set of icons for each flavor according to the icon directive                                             |
+| ios:plist                | iOS           | Updates the info.plist file                                                                                        |
+| ios:launchScreen         | iOS           | Creates a set of launchscreens for each flavor                                                                     |
+| macos:podfile            | macOS         | Updates the Pods-Runner path for each flavor                                                                       |
+| macos:xcconfig           | macOS         | Creates a set of xcconfig files for each flavor and build configuration                                            |
+| macos:configs            | macOS         | Creates a set of xcconfig files for each flavor and build configuration                                            |
+| macos:buildTargets       | macOS         | Creates a set of build targets for each flavor and build configuration                                             |
+| macos:schema             | macOS         | Creates a set of schemas for each flavor                                                                           |
+| macos:dummyAssets        | macOS         | Generates some default icons for your custom flavors                                                               |
+| macos:icons              | macOS         | Creates a set of icons for each flavor according to the icon directive                                             |
+| macos:plist              | macOS         | Updates the info.plist file                                                                                        |
+| linux:cmake              | Linux         | Sets the application ID for each flavor in CMakeLists.txt                                                          |
+| linux:runnerCmake        | Linux         | Forwards FLUTTER_APP_FLAVOR into runner/CMakeLists.txt so it's available to native code                            |
+| linux:myApplication      | Linux         | Sets the window title for each flavor in my_application.cc                                                         |
+| windows:mainCppTemplate  | Windows       | Templates main.cpp into main.cpp.in so its window title can be set per flavor                                      |
+| windows:runnerRcTemplate | Windows       | Templates Runner.rc into Runner.rc.in so its icon/window title can be set per flavor                               |
+| windows:cmake            | Windows       | Sets the icon/window title for each flavor in runner/CMakeLists.txt and wires the .in templates via configure_file |
+| windows:dummyAssets      | Windows       | Generates a default icon for your custom flavors                                                                   |
+| windows:icons            | Windows       | Creates an icon for each flavor according to the icon directive                                                    |
+
+
+
 
 #### android (under app)
 
-| key              | type   | default       | required | description                                                        |
-|:-----------------|:-------|:--------------|:---------|:-------------------------------------------------------------------|
-| flavorDimensions | String | "flavor-type" | false    | The value of the flavorDimensions in the android build.gradle file |
-| resValues        | Array  | {}            | false    | An array which contains a set of resValues configurations          |
-| buildConfigFields| Array  | {}            | false    | An array which contains a set of buildConfigFields configurations          |
+
+| key               | type   | default       | required | description                                                        |
+| ----------------- | ------ | ------------- | -------- | ------------------------------------------------------------------ |
+| flavorDimensions  | String | "flavor-type" | false    | The value of the flavorDimensions in the android build.gradle file |
+| resValues         | Array  | {}            | false    | An array which contains a set of resValues configurations          |
+| buildConfigFields | Array  | {}            | false    | An array which contains a set of buildConfigFields configurations  |
+
+
+
 
 #### ios (under app)
 
+
 | key           | type       | default | required | description                                                                                    |
-|:--------------|:-----------|:--------|:---------|:-----------------------------------------------------------------------------------------------|
+| ------------- | ---------- | ------- | -------- | ---------------------------------------------------------------------------------------------- |
 | buildSettings | Dictionary | {}      | false    | An XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 | includes      | Array      | []      | false    | A list of xcconfig files to include in every iOS flavor xcconfig                               |
 
+
+
+
 ##### iOS build settings defaults (fork)
 
-Every iOS flavor's `Debug-`, `Profile-` and `Release-` build configurations get these values, on both the project and the Runner target:
-
-| key                                                     | value      | Xcode setting                                      |
-|:--------------------------------------------------------|:-----------|:---------------------------------------------------|
-| `IPHONEOS_DEPLOYMENT_TARGET`                            | `16.0`     | Minimum Deployments: iOS 16.0                      |
-| `CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES` | `YES`      | Allow Non-modular Includes in Framework Modules    |
-| `SUPPORTED_PLATFORMS`                                   | `iphonesimulator iphoneos` | Supported Platforms: iOS (Xcode raw value) |
-| `TARGETED_DEVICE_FAMILY`                                | `1`        | Targeted Device Families: iPhone                   |
-
-On rerun, the Runner target configs are merged rather than reset, so other settings you added in Xcode (entitlements, signing, etc.) are kept. After all flavors are processed, `ios:buildTargets` also normalizes the **base** Runner `Debug` / `Release` / `Profile` rows and every matching project-level configuration (so Xcode Build Settings / General no longer show stale iPhone+iPad or missing CLANG values). To change any of these four, set the key under `app.ios.buildSettings` or a flavor's `ios.buildSettings`.
+See [iOS build settings that survive reruns](#1-ios-build-settings-that-survive-reruns) in the fork merge guide below for values, files, and re-apply steps.
 
 #### macos (under app)
 
+
 | key           | type       | default | required | description                                                                                    |
-|:--------------|:-----------|:--------|:---------|:-----------------------------------------------------------------------------------------------|
+| ------------- | ---------- | ------- | -------- | ---------------------------------------------------------------------------------------------- |
 | buildSettings | Dictionary | {}      | false    | An XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 | includes      | Array      | []      | false    | A list of xcconfig files to include in every macOS flavor xcconfig                             |
 
+
+
+
 #### app (under *flavorname*)
 
+
 | key  | type   | default | required | description                   |
-|:-----|:-------|:--------|:---------|:------------------------------|
+| ---- | ------ | ------- | -------- | ----------------------------- |
 | name | String |         | true     | The name of the App           |
 | icon | String |         | false    | The icon path for this flavor |
 
+
+
+
 #### android (under *flavorname*)
 
-| key                 | type   | default | required | description                                                                |
-|:--------------------|:-------|:--------|:---------|:---------------------------------------------------------------------------|
-| applicationId       | String |         | true     | The applicationId of the Android App                                       |
-| firebase            | Object |         | false    | An object which contains a Firebase configuration                          |
-| resValues           | Array  |         | false    | An array which contains a set of resValues configurations                  |
-| buildConfigFields   | Array  |         | false    | An array which contains a set of buildConfigFields configurations          |
-| customConfig        | Array  |         | false    | An array which contains a set of custom configs, *overrides defaultConfig* |
-| generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc)         |
-| icon                | String |         | false    | The icon path for this android flavor                                      |
-| adaptiveIcon        | Array  |         | false    | An array which contains foreground, background, monochrome (optional) of adaptive icon   |
+
+| key                 | type   | default | required | description                                                                            |
+| ------------------- | ------ | ------- | -------- | -------------------------------------------------------------------------------------- |
+| applicationId       | String |         | true     | The applicationId of the Android App                                                   |
+| firebase            | Object |         | false    | An object which contains a Firebase configuration                                      |
+| resValues           | Array  |         | false    | An array which contains a set of resValues configurations                              |
+| buildConfigFields   | Array  |         | false    | An array which contains a set of buildConfigFields configurations                      |
+| customConfig        | Array  |         | false    | An array which contains a set of custom configs, *overrides defaultConfig*             |
+| generateDummyAssets | bool   | true    | false    | True if you want to generate dummy assets (icon set, strings, etc)                     |
+| icon                | String |         | false    | The icon path for this android flavor                                                  |
+| adaptiveIcon        | Array  |         | false    | An array which contains foreground, background, monochrome (optional) of adaptive icon |
+
+
+
 
 #### ios (under *flavorname*)
 
+
 | key                 | type       | default | required | description                                                                                                   |
-|:--------------------|:-----------|:--------|:---------|:--------------------------------------------------------------------------------------------------------------|
+| ------------------- | ---------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------- |
 | bundleId            | String     |         | true     | The bundleId of the iOS App                                                                                   |
 | buildSettings       | Dictionary | {}      | false    | A flavor-specific XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 | firebase            | Object     |         | false    | An object which contains a Firebase configuration                                                             |
@@ -246,49 +277,74 @@ On rerun, the Runner target configs are merged rather than reset, so other setti
 | generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
 | icon                | String     |         | false    | The icon path for this iOS flavor                                                                             |
 
+
+
+
 #### macos (under *flavorname*)
 
+
 | key                 | type       | default | required | description                                                                                                   |
-|:--------------------|:-----------|:--------|:---------|:--------------------------------------------------------------------------------------------------------------|
+| ------------------- | ---------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------- |
 | bundleId            | String     |         | true     | The bundleId of the macOS App                                                                                 |
 | buildSettings       | Dictionary | {}      | false    | A flavor-specific XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 | firebase            | Object     |         | false    | An object which contains a Firebase configuration                                                             |
 | variables           | Array      |         | false    | An array which contains a set of variables configurations                                                     |
 | includes            | Array      | []      | false    | A list of xcconfig files to include in the generated xcconfig for this flavor                                 |
 | generateDummyAssets | bool       | true    | false    | True if you want to generate dummy assets (xcassets, etc)                                                     |
-| icon                | String     |         | false    | The icon path for this macOS flavor                                                                           | 
+| icon                | String     |         | false    | The icon path for this macOS flavor                                                                           |
+
+
+
 
 #### linux (under *flavorname*)
 
-| key           | type   | default | required | description                                    |
-|:--------------|:-------|:--------|:---------|:------------------------------------------------|
-| applicationId | String |         | true     | The GTK application ID of the Linux App        |
+
+| key           | type   | default | required | description                             |
+| ------------- | ------ | ------- | -------- | --------------------------------------- |
+| applicationId | String |         | true     | The GTK application ID of the Linux App |
+
+
+
 
 #### windows (under *flavorname*)
 
-| key                 | type   | default | required | description                                                         |
-|:--------------------|:-------|:--------|:---------|:---------------------------------------------------------------------|
-| generateDummyAssets | bool   | true    | false    | True if you want to generate a dummy icon (.ico) for this flavor     |
-| icon                | String |         | false    | The icon path for this Windows flavor                                |
+
+| key                 | type   | default | required | description                                                      |
+| ------------------- | ------ | ------- | -------- | ---------------------------------------------------------------- |
+| generateDummyAssets | bool   | true    | false    | True if you want to generate a dummy icon (.ico) for this flavor |
+| icon                | String |         | false    | The icon path for this Windows flavor                            |
+
+
+
 
 #### firebase
 
+
 | key    | type   | default | required | description                                                                                                                   |
-|:-------|:-------|:--------|:---------|:------------------------------------------------------------------------------------------------------------------------------|
+| ------ | ------ | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | config | String |         | false    | The path to the Firebase configuration file (google-services.json for Android and GoogleService-Info.plist for iOS and macOS) |
+
+
+
 
 #### agconnect (for Android)
 
+
 | key    | type   | default | required | description                                                            |
-|:-------|:-------|:--------|:---------|:-----------------------------------------------------------------------|
+| ------ | ------ | ------- | -------- | ---------------------------------------------------------------------- |
 | config | String |         | false    | The path to the AGConnect configuration file (agconnect-services.json) |
+
+
+
 
 #### resValue (for Android)
 
+
 | key   | type   | default | required | description                                                                                                                              |
-|:------|:-------|:--------|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------|
+| ----- | ------ | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | type  | String |         | true     | The type of the [resValue](https://developer.android.com/reference/tools/gradle-api/7.0/com/android/build/api/variant/ResValue) variable |
 | value | String |         | true     | The value of the resValue variable                                                                                                       |
+
 
 ```yaml
 flavors:
@@ -310,12 +366,16 @@ flavors:
       bundleId: "com.example.apple"
 ```
 
+
+
 #### buildConfigField (for Android)
 
-| key   | type   | default | required | description                                                                                                                              |
-|:------|:-------|:--------|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------|
+
+| key   | type   | default | required | description                                                                                                                                              |
+| ----- | ------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | type  | String |         | true     | The type of the [buildConfigField](https://developer.android.com/reference/tools/gradle-api/4.2/com/android/build/api/variant/BuildConfigField) variable |
-| value | String |         | true     | The value of the buildConfigField variable                                                                                                       |
+| value | String |         | true     | The value of the buildConfigField variable                                                                                                               |
+
 
 ```yaml
 flavors:
@@ -340,12 +400,16 @@ flavors:
       bundleId: "com.example.apple"
 ```
 
+
+
 #### variable (for iOS and macOS)
 
+
 | key    | type   | default | required | description                                                                                                                                                                                                                                          |
-|:-------|:-------|:--------|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------ | ------ | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | target | String |         | false    | The type of the [target](https://medium.com/geekculture/what-are-debug-and-release-modes-in-xcode-how-to-check-app-is-running-in-debug-mode-8dadad6a3428) (debug, release, profile). Do not specify a target if you want to apply it to all of them. |
 | value  | String |         | true     | The value of the variable                                                                                                                                                                                                                            |
+
 
 ```yaml
 flavors:
@@ -366,13 +430,17 @@ flavors:
           value: "variable2"        
 ```
 
+
+
 #### include (for iOS and macOS)
 
+
 | key      | type   | default | required | description                                                                                                                                                                                                                                          |
-|:---------|:-------|:--------|:---------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------- | ------ | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | value    | String |         | true     | The path of the xcconfig file to include                                                                                                                                                                                                             |
 | target   | String |         | false    | The type of the [target](https://medium.com/geekculture/what-are-debug-and-release-modes-in-xcode-how-to-check-app-is-running-in-debug-mode-8dadad6a3428) (debug, release, profile). Do not specify a target if you want to apply it to all of them. |
 | optional | bool   | false   | false    | If `true`, uses `#include?` — the build will not fail if the file is missing. Defaults to `false` (`#include`).                                                                                                                                      |
+
 
 Global includes (under `app.ios` or `app.macos`) are merged with flavor-specific includes. Global entries come first; flavor entries are appended and take precedence for any duplicate keys.
 
@@ -403,9 +471,12 @@ flavorizr:
             target: release
 ```
 
+
+
 #### customConfig (for Android only)
 
 You can define any custom property for android
+
 ```yml
 flavors:
   apple:
@@ -435,9 +506,12 @@ apple {
 }
 ```
 
+
+
 #### adaptiveIcon (for Android only)
 
 You can define adaptiveIcon for android:
+
 ```yml
 flavors:
   apple:
@@ -453,8 +527,9 @@ flavors:
         monochrome: "assets/adaptive_icon/appleApp/ic_launcher_monochrome.png"
 ```
 
-* monochrome (Themed icons on Android >= 13) is optional.
-* After removing adaptiveIcon key, the adaptive icons generated before will still exist. Please delete adaptiveIcon manually.
+- monochrome (Themed icons on Android >= 13) is optional.
+- After removing adaptiveIcon key, the adaptive icons generated before will still exist. Please delete adaptiveIcon manually.
+
 
 
 ## Usage
@@ -496,6 +571,8 @@ If you want to skip the confirmation step, you can append the -f (or --force) pa
 flutter pub run flutter_flavorizr -f
 ```
 
+
+
 ## Run your flavors
 
 Once the process has generated the flavors, you can run them by typing
@@ -532,53 +609,57 @@ flavors:
         LD_RUNPATH_SEARCH_PATHS:
           - "$(inherited)"
           - "@executable_path/../Frameworks"
-```            
+```
+
+
 
 ### Default processors set
 
 By default, when you do not specify a custom set of processors by appending the -p (or --processors) param, a default processors set will be used:
 
-* assets:download
-* assets:extract
-* android:androidManifest
-* android:flavorizrGradle
-* android:buildGradle
-* android:dummyAssets
-* android:icons
-* flutter:flavors
-* flutter:app
-* flutter:pages
-* ios:podfile
-* ios:xcconfig
-* ios:buildTargets
-* ios:schema
-* ios:dummyAssets
-* ios:icons
-* ios:plist
-* ios:launchScreen
-* macos:podfile
-* macos:xcconfig
-* macos:configs
-* macos:buildTargets
-* macos:schema
-* macos:dummyAssets
-* macos:icons
-* macos:plist
-* linux:cmake
-* linux:runnerCmake
-* linux:myApplication
-* windows:mainCppTemplate
-* windows:runnerRcTemplate
-* windows:cmake
-* windows:dummyAssets
-* windows:icons
-* google:firebase
-* ios:googleUrlScheme
-* huawei:agconnect
-* assets:clean
-* ide:config
+- assets:download
+- assets:extract
+- android:androidManifest
+- android:flavorizrGradle
+- android:buildGradle
+- android:dummyAssets
+- android:icons
+- flutter:flavors
+- flutter:app
+- flutter:pages
+- ios:podfile
+- ios:xcconfig
+- ios:buildTargets
+- ios:schema
+- ios:dummyAssets
+- ios:icons
+- ios:plist
+- ios:launchScreen
+- macos:podfile
+- macos:xcconfig
+- macos:configs
+- macos:buildTargets
+- macos:schema
+- macos:dummyAssets
+- macos:icons
+- macos:plist
+- linux:cmake
+- linux:runnerCmake
+- linux:myApplication
+- windows:mainCppTemplate
+- windows:runnerRcTemplate
+- windows:cmake
+- windows:dummyAssets
+- windows:icons
+- google:firebase
+- ios:googleUrlScheme
+- huawei:agconnect
+- assets:clean
+- ide:config
 
 > **Fork defaults:** `flutter:main` is **not** included (avoids overwriting your existing `main.dart`). After a successful run with the default instruction set (no custom `instructions:`), this fork also runs `flutter_native_splash:create` for each flavor.
+
+
 
 ## Customize your app
 
@@ -607,6 +688,8 @@ The process creates a simple title customization: a switch which checks the curr
 If you are wondering how to use these getters, you can find an example under the pages folder: in the my_home_page.dart file, the page shown after the launch of the app, we can see a clear reference on the title getter defined in the F class.
 
 ## Third party services
+
+
 
 ### Google Firebase
 
@@ -660,6 +743,8 @@ Future<void> main() async {
 }
 ```
 
+
+
 ### Google Sign-In URL schemes (iOS)
 
 When you use Google Sign-In (or Firebase Auth with Google) across multiple iOS flavors, each flavor has its own `REVERSED_CLIENT_ID` / `CLIENT_ID` inside `GoogleService-Info.plist`. A single static `Info.plist` cannot hold every flavor’s values.
@@ -697,8 +782,10 @@ dart run flutter_native_splash:create --flavor <flavor> --path=yamls/flutter_nat
 
 **Requirements**
 
-- Add [`flutter_native_splash`](https://pub.dev/packages/flutter_native_splash) as a dev dependency in the **consuming app**
+- Add `[flutter_native_splash](https://pub.dev/packages/flutter_native_splash)` as a dev dependency in the **consuming app**
 - Provide a YAML file per flavor under `yamls/`, e.g. `yamls/flutter_native_splash-apple.yaml`
+
+
 
 ### Huawei AppGallery Connect
 
@@ -734,17 +821,143 @@ flavors:
 
 Remember to add the native dependencies for the targeted operative system for both Firebase and Huawei AppGallery Connect: flutter_flavorizr will only take care of applying the configuration.
 
+## Kamero fork: features & re-apply after upstream merge
+
+This section is the **source of truth** for fork-only behavior. When bumping to a newer [AngeloAvv/flutter_flavorizr](https://github.com/AngeloAvv/flutter_flavorizr) release, re-apply every item below (or cherry-pick the equivalent commits) and run the listed tests.
+
+Upstream base: **2.6.0**. Consuming app pins:
+
+```yaml
+flutter_flavorizr:
+  git:
+    url: https://github.com/Ajay-kamero/flutter_flavorizr.git
+    ref: main
+```
+
+### Checklist when merging upstream
+
+1. Merge/rebase upstream into this fork.
+2. Re-apply or resolve conflicts for every file listed under each feature.
+3. Confirm `defaultInstructionSet` in `lib/src/processors/processor.dart` still:
+   - omits `flutter:main`
+   - includes `ios:googleUrlScheme` after `google:firebase`
+4. Confirm `ios:buildTargets` still ends with `IOSNormalizeBuildSettingsProcessor`.
+5. Run at least:
+   - `flutter test test/processors/darwin/darwin_add_build_configuration_processor_test.dart`
+   - `flutter test test/processors/ios/build_configuration/ios_normalize_build_settings_processor_test.dart`
+   - `flutter test test/processors/darwin/darwin_add_google_url_scheme_build_phase_processor_test.dart`
+6. Smoke in a multi-flavor app: `dart run flutter_flavorizr -f -p ios:buildTargets` and check Runner base `Debug` + one `Debug-<flavor>` for the four keys below.
+
+---
+
+### 1. iOS build settings that survive reruns
+
+**Problem:** Upstream `DarwinAddBuildConfigurationProcessor` on every run (a) clones project-level base `Debug`/`Release`/`Profile` into `{Mode}-{flavor}` (baseline often has `TARGETED_DEVICE_FAMILY = "1,2"` and no CLANG), and (b) **wipes** the Runner target flavor config to only `PRODUCT_NAME`. Manual Xcode edits are lost. Xcode UI also often shows **base** Runner `Debug`/`Release`/`Profile`, which flavorizr never updated.
+
+**Wanted values** (Xcode UI → raw pbxproj):
+
+| key | value | Xcode UI |
+| --- | --- | --- |
+| `IPHONEOS_DEPLOYMENT_TARGET` | `16.0` | Minimum Deployments: iOS 16.0 |
+| `CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES` | `YES` | Allow Non-modular Includes in Framework Modules |
+| `SUPPORTED_PLATFORMS` | `iphonesimulator iphoneos` | Supported Platforms: **iOS** (not bare `iphoneos`) |
+| `TARGETED_DEVICE_FAMILY` | `1` | Targeted Device Families: iPhone only |
+
+**Implementation**
+
+| Piece | Path | Role |
+| --- | --- | --- |
+| Defaults seed | `lib/src/parser/mixins/build_settings_mixin.dart` → `iosDefaultBuildSettings` | Merged into every iOS flavor’s YAML `buildSettings` when `app.ios` is absent / as base |
+| Single source of truth | `lib/src/processors/ios/build_configuration/ios_fork_build_settings.dart` | `IosForkBuildSettings.values` + `mergeInto` + name matcher |
+| Per-flavor write | `lib/src/processors/darwin/darwin_add_build_configuration_processor.dart` | Runner target: **merge** existing + `PRODUCT_NAME` + force 4 keys. Project config: clone + YAML + force 4 keys. Gated by `_isIosFlavorBuild` (`IPHONEOS_DEPLOYMENT_TARGET` in map) so **macOS is unchanged** |
+| Post-pass normalize | `lib/src/processors/ios/build_configuration/ios_normalize_build_settings_processor.dart` | After all flavors: rewrite PBXProject + **Runner** configs matching `^(Debug\|Profile\|Release)(-.+)?$` |
+| Wired in | `lib/src/processors/ios/build_configuration/ios_build_configurations_targets_processor.dart` | Appends `IOSNormalizeBuildSettingsProcessor` after per-flavor processors |
+
+**Do not reintroduce:** assigning `targetConfig.buildSettings = {'PRODUCT_NAME': ...}` alone (upstream wipe).
+
+**Override:** pubspec `app.ios.buildSettings` / per-flavor `ios.buildSettings` still merge into flavor configs; the fork force/normalize still applies the four keys afterward unless you change `IosForkBuildSettings.values`.
+
+**Tests:** `test/processors/darwin/darwin_add_build_configuration_processor_test.dart` (preserve entitlements on rerun + four keys), `test/processors/ios/build_configuration/ios_normalize_build_settings_processor_test.dart`.
+
+---
+
+### 2. Skip overwriting `lib/main.dart`
+
+**Problem:** Upstream default instructions include `flutter:main`, which copies a template over the app’s real `main.dart`.
+
+**Implementation:** In `lib/src/processors/processor.dart` → `defaultInstructionSet`, keep `flutter:main` **commented out / omitted**. Processor map entry for `flutter:main` can remain for explicit `-p flutter:main` use.
+
+**Verify after merge:** default instruction list must not contain `flutter:main`.
+
+---
+
+### 3. Google Sign-In URL scheme (`ios:googleUrlScheme`)
+
+**Problem:** Each flavor has its own `REVERSED_CLIENT_ID` / `CLIENT_ID`; static Info.plist cannot hold all.
+
+**Implementation**
+
+| Piece | Path |
+| --- | --- |
+| Processor | `lib/src/processors/darwin/darwin_add_google_url_scheme_build_phase_processor.dart` |
+| Register | `lib/src/processors/processor.dart` map key `ios:googleUrlScheme` |
+| Default order | After `google:firebase` in `defaultInstructionSet` |
+
+Adds Xcode shell phase **Google Sign-In URL Scheme**: reads active `Runner/GoogleService-Info.plist`, writes URL scheme + `GIDClientID` into the built Info.plist.
+
+**Tests:** `test/processors/darwin/darwin_add_google_url_scheme_build_phase_processor_test.dart`
+
+**Usage docs:** [Google Sign-In URL schemes (iOS)](#google-sign-in-url-schemes-ios)
+
+---
+
+### 4. Native splash (`flutter_native_splash`) + iOS naming sync
+
+**Problem:** Per-flavor splash YAMLs need generation; FNS asset names (`LaunchImage{Flavor}`) do not match flavorizr Info.plist / storyboard names (`{flavor}LaunchImage`).
+
+**Implementation**
+
+| Piece | Path | Role |
+| --- | --- | --- |
+| Post-run hook | `lib/src/processors/processor.dart` (after successful default run) | For each iOS flavor with `yamls/flutter_native_splash-<flavor>.yaml`, runs `dart run flutter_native_splash:create --flavor … --path=…` |
+| Asset sync | `lib/src/processors/ios/launch_screen/ios_sync_native_splash_assets_processor.dart` | Copies FNS imageset → `{flavor}LaunchImage.imageset`; applies yaml color to `{flavor}LaunchScreen.storyboard` |
+
+**Requirements:** consuming app has `flutter_native_splash` + per-flavor YAML under `yamls/`.
+
+**Usage docs:** [Native splash screens](#native-splash-screens-flutter_native_splash)
+
+---
+
+### Files to watch on upstream conflict
+
+```
+lib/src/parser/mixins/build_settings_mixin.dart
+lib/src/processors/darwin/darwin_add_build_configuration_processor.dart
+lib/src/processors/ios/build_configuration/ios_build_configurations_targets_processor.dart
+lib/src/processors/ios/build_configuration/ios_fork_build_settings.dart          # fork-only
+lib/src/processors/ios/build_configuration/ios_normalize_build_settings_processor.dart  # fork-only
+lib/src/processors/darwin/darwin_add_google_url_scheme_build_phase_processor.dart       # fork-only
+lib/src/processors/ios/launch_screen/ios_sync_native_splash_assets_processor.dart        # fork-only
+lib/src/processors/processor.dart
+```
+
+If upstream rewrites the Darwin build-config flow, port the **merge + force + normalize** behavior onto the new API rather than dropping it.
+
 ## Troubleshooting
+
 How to fix the error ["Unable to load contents of file list"](doc%2Ftroubleshooting%2Funable-to-load-contents-of-file-list%2FREADME.md)
 
 ## Docs & Tutorials (from the community)
+
 [Easily build flavors in Flutter (Android and iOS) with flutter_flavorizr](https://angeloavv.medium.com/easily-build-flavors-in-flutter-android-and-ios-with-flutter-flavorizr-d48cbf956e4) - Angelo Cassano
 
 [Get the best out of Flutter flavors with flutter_flavorizr](https://pierre-dev.hashnode.dev/get-the-best-out-of-flutter-flavors-with-flutterflavorizr) - Pierre Monier
 
 ## Further developments
 
-* Let the user define its custom set of available instructions.
+- Let the user define its custom set of available instructions.
+
+
 
 ## Questions and bugs
 
