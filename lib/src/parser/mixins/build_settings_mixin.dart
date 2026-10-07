@@ -9,6 +9,10 @@ mixin BuildSettingsMixin {
     "FRAMEWORK_SEARCH_PATHS": ['\$(inherited)', '\$(PROJECT_DIR)/Flutter'],
     "LIBRARY_SEARCH_PATHS": ['\$(inherited)', '\$(PROJECT_DIR)/Flutter'],
     "INFOPLIST_FILE": "Runner/Info.plist",
+    "IPHONEOS_DEPLOYMENT_TARGET": "16.0",
+    "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES": "YES",
+    "SUPPORTED_PLATFORMS": "iphoneos",
+    "TARGETED_DEVICE_FAMILY": "1",
   };
 
   static final Map<String, dynamic> macosDefaultBuildSettings = {

@@ -29,6 +29,15 @@ import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart
 import 'package:mason_logger/mason_logger.dart';
 
 class DarwinAddBuildConfigurationProcessor extends AbstractProcessor<void> {
+  /// Keys that Xcode resolves at the target level, so they must also be
+  /// written on the Runner target config to avoid being shadowed there.
+  static const List<String> targetSyncedBuildSettings = [
+    'IPHONEOS_DEPLOYMENT_TARGET',
+    'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES',
+    'SUPPORTED_PLATFORMS',
+    'TARGETED_DEVICE_FAMILY',
+  ];
+
   final String projectPath;
   final String xconfigPath;
   final String flavorName;
@@ -63,7 +72,12 @@ class DarwinAddBuildConfigurationProcessor extends AbstractProcessor<void> {
       targetConfig.name = configName;
       targetConfigList.buildConfigurations.add(targetConfig);
     }
-    targetConfig.buildSettings = {'PRODUCT_NAME': r'$(TARGET_NAME)'};
+    targetConfig.buildSettings = {
+      ...Map<String, dynamic>.from(targetConfig.buildSettings),
+      'PRODUCT_NAME': r'$(TARGET_NAME)',
+      for (final key in targetSyncedBuildSettings)
+        if (buildSettings.containsKey(key)) key: buildSettings[key],
+    };
     targetConfig.baseConfigurationReference = fileRef;
 
     final baseConfig =

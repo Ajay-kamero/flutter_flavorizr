@@ -24,6 +24,7 @@
  */
 
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
+import 'package:flutter_flavorizr/src/parser/mixins/build_settings_mixin.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/darwin/darwin_add_build_configuration_processor.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -169,4 +170,61 @@ void main() {
     });
   });
 
+  test(
+      'Test DarwinAddBuildConfigurationProcessor applies iOS default settings and preserves manual target settings on rerun',
+      () async {
+    await TestUtils.withTempDir((dir) async {
+      final projectPath = '${dir.path}/Runner.xcodeproj';
+      copyPathSync(exampleProjectPath, projectPath);
+
+      final settings = {
+        ...BuildSettingsMixin.iosDefaultBuildSettings,
+        'PRODUCT_BUNDLE_IDENTIFIER': 'com.example.orange',
+      };
+
+      Future<void> run() => DarwinAddBuildConfigurationProcessor(
+            projectPath,
+            'Flutter/appleDebug.xcconfig',
+            'orange',
+            'Debug',
+            settings,
+            config: flavorizr,
+            logger: logger,
+          ).execute();
+
+      const expected = {
+        'IPHONEOS_DEPLOYMENT_TARGET': '16.0',
+        'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES': 'YES',
+        'SUPPORTED_PLATFORMS': 'iphoneos',
+        'TARGETED_DEVICE_FAMILY': '1',
+      };
+
+      await run();
+
+      final afterFirst = await XcodeProject.open(projectPath);
+      afterFirst.targets.first.buildConfigurationList!['Debug-orange']!
+          .buildSettings['CODE_SIGN_ENTITLEMENTS'] = 'Runner/Runner.entitlements';
+      await afterFirst.save();
+
+      await run();
+
+      final reopened = await XcodeProject.open(projectPath);
+      final targetConfig =
+          reopened.targets.first.buildConfigurationList!['Debug-orange']!;
+      final projectConfig =
+          reopened.buildConfigurations.firstWhere((c) => c.name == 'Debug-orange');
+
+      expected.forEach((key, value) {
+        expect(targetConfig.buildSettings[key], value, reason: 'target $key');
+        expect(projectConfig.buildSettings[key], value, reason: 'project $key');
+      });
+      expect(targetConfig.buildSettings['PRODUCT_NAME'], r'$(TARGET_NAME)');
+      expect(targetConfig.buildSettings['CODE_SIGN_ENTITLEMENTS'],
+          'Runner/Runner.entitlements');
+      expect(projectConfig.buildSettings['PRODUCT_BUNDLE_IDENTIFIER'],
+          'com.example.orange');
+      expect(targetConfig.buildSettings.containsKey('PRODUCT_BUNDLE_IDENTIFIER'),
+          isFalse);
+    });
+  });
 }
