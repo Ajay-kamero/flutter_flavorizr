@@ -6,6 +6,7 @@ A flutter utility to easily create flavors in your flutter application
 > - per-flavor **Google Sign-In URL schemes** on iOS (`ios:googleUrlScheme`)
 > - automatic **flutter_native_splash** generation per flavor
 > - **skips overwriting** an existing `main.dart` by default
+> - iOS flavor **build settings defaults** that survive reruns (see [iOS build settings defaults](#ios-build-settings-defaults-fork))
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
@@ -192,6 +193,19 @@ flavorizr:
 |:--------------|:-----------|:--------|:---------|:-----------------------------------------------------------------------------------------------|
 | buildSettings | Dictionary | {}      | false    | An XCode build configuration dictionary [XCode Build Settings](https://xcodebuildsettings.com) |
 | includes      | Array      | []      | false    | A list of xcconfig files to include in every iOS flavor xcconfig                               |
+
+##### iOS build settings defaults (fork)
+
+Every iOS flavor's `Debug-`, `Profile-` and `Release-` build configurations get these values, on both the project and the Runner target:
+
+| key                                                     | value      | Xcode setting                                      |
+|:--------------------------------------------------------|:-----------|:---------------------------------------------------|
+| `IPHONEOS_DEPLOYMENT_TARGET`                            | `16.0`     | Minimum Deployments: iOS 16.0                      |
+| `CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES` | `YES`      | Allow Non-modular Includes in Framework Modules    |
+| `SUPPORTED_PLATFORMS`                                   | `iphoneos` | Supported Platforms: iOS                           |
+| `TARGETED_DEVICE_FAMILY`                                | `1`        | Targeted Device Families: iPhone                   |
+
+On rerun, the Runner target configs are merged rather than reset, so other settings you added in Xcode (entitlements, signing, etc.) are kept. To change any of these four, set the key under `app.ios.buildSettings` or a flavor's `ios.buildSettings`.
 
 #### macos (under app)
 
