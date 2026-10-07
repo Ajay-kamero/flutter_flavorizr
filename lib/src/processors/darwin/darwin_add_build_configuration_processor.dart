@@ -26,18 +26,10 @@
 import 'package:dart_xcodeproj/dart_xcodeproj.dart';
 import 'package:flutter_flavorizr/src/parser/models/flavorizr.dart';
 import 'package:flutter_flavorizr/src/processors/commons/abstract_processor.dart';
+import 'package:flutter_flavorizr/src/processors/ios/build_configuration/ios_fork_build_settings.dart';
 import 'package:mason_logger/mason_logger.dart';
 
 class DarwinAddBuildConfigurationProcessor extends AbstractProcessor<void> {
-  /// Keys that Xcode resolves at the target level, so they must also be
-  /// written on the Runner target config to avoid being shadowed there.
-  static const List<String> targetSyncedBuildSettings = [
-    'IPHONEOS_DEPLOYMENT_TARGET',
-    'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES',
-    'SUPPORTED_PLATFORMS',
-    'TARGETED_DEVICE_FAMILY',
-  ];
-
   final String projectPath;
   final String xconfigPath;
   final String flavorName;
@@ -72,25 +64,32 @@ class DarwinAddBuildConfigurationProcessor extends AbstractProcessor<void> {
       targetConfig.name = configName;
       targetConfigList.buildConfigurations.add(targetConfig);
     }
-    targetConfig.buildSettings = {
+    final mergedTargetSettings = {
       ...Map<String, dynamic>.from(targetConfig.buildSettings),
       'PRODUCT_NAME': r'$(TARGET_NAME)',
-      for (final key in targetSyncedBuildSettings)
-        if (buildSettings.containsKey(key)) key: buildSettings[key],
     };
+    targetConfig.buildSettings = _isIosFlavorBuild(buildSettings)
+        ? IosForkBuildSettings.mergeInto(mergedTargetSettings)
+        : mergedTargetSettings;
     targetConfig.baseConfigurationReference = fileRef;
 
     final baseConfig =
         project.buildConfigurations.firstWhere((c) => c.name == mode);
     final projectConfig = project.addBuildConfiguration(configName, configType);
     projectConfig.baseConfigurationReference = fileRef;
-    projectConfig.buildSettings = {
+    final mergedProjectSettings = {
       ...Map<String, dynamic>.from(baseConfig.buildSettings),
       ...buildSettings,
     };
+    projectConfig.buildSettings = _isIosFlavorBuild(buildSettings)
+        ? IosForkBuildSettings.mergeInto(mergedProjectSettings)
+        : mergedProjectSettings;
 
     await project.save();
   }
+
+  static bool _isIosFlavorBuild(Map<String, dynamic> buildSettings) =>
+      buildSettings.containsKey('IPHONEOS_DEPLOYMENT_TARGET');
 
   @override
   String toString() => 'DarwinAddBuildConfigurationProcessor';

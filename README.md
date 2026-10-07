@@ -205,7 +205,7 @@ Every iOS flavor's `Debug-`, `Profile-` and `Release-` build configurations get 
 | `SUPPORTED_PLATFORMS`                                   | `iphoneos` | Supported Platforms: iOS                           |
 | `TARGETED_DEVICE_FAMILY`                                | `1`        | Targeted Device Families: iPhone                   |
 
-On rerun, the Runner target configs are merged rather than reset, so other settings you added in Xcode (entitlements, signing, etc.) are kept. To change any of these four, set the key under `app.ios.buildSettings` or a flavor's `ios.buildSettings`.
+On rerun, the Runner target configs are merged rather than reset, so other settings you added in Xcode (entitlements, signing, etc.) are kept. After all flavors are processed, `ios:buildTargets` also normalizes the **base** Runner `Debug` / `Release` / `Profile` rows and every matching project-level configuration (so Xcode Build Settings / General no longer show stale iPhone+iPad or missing CLANG values). To change any of these four, set the key under `app.ios.buildSettings` or a flavor's `ios.buildSettings`.
 
 #### macos (under app)
 
