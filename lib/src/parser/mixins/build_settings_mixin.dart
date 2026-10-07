@@ -11,7 +11,7 @@ mixin BuildSettingsMixin {
     "INFOPLIST_FILE": "Runner/Info.plist",
     "IPHONEOS_DEPLOYMENT_TARGET": "16.0",
     "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES": "YES",
-    "SUPPORTED_PLATFORMS": "iphoneos",
+    "SUPPORTED_PLATFORMS": "iphonesimulator iphoneos",
     "TARGETED_DEVICE_FAMILY": "1",
   };
 

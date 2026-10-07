@@ -11,7 +11,8 @@ class IosForkBuildSettings {
   static const Map<String, dynamic> values = {
     'IPHONEOS_DEPLOYMENT_TARGET': '16.0',
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES': 'YES',
-    'SUPPORTED_PLATFORMS': 'iphoneos',
+    // Xcode UI "Supported Platforms: iOS" serializes as both device + simulator.
+    'SUPPORTED_PLATFORMS': 'iphonesimulator iphoneos',
     'TARGETED_DEVICE_FAMILY': '1',
   };
 
